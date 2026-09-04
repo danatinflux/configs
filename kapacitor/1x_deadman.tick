@@ -1,0 +1,35 @@
+var influxdb_metrics = stream
+    |from()
+        .database('telegraf')
+        .retentionPolicy('autogen')
+        .measurement('cpu')
+    |groupBy('cluster_id', 'host')
+
+var trigger = influxdb_metrics
+    |deadman(0.9, 5m)
+        .id('Host: {{ index .Tags "host" }}, Cluster ID: {{ index .Tags "cluster_id" }}')
+        .message('{{ .Level }} Stream-2 Alert: HomeLab 1x Deadman for {{ .ID }} at {{ .Time }}.')
+        .idTag('alertID')
+        .messageField('message')
+        .durationField('duration')
+        .levelTag('level')
+        .stateChangesOnly()
+        .discord()
+        .embedTitle('Deadman Event, Host is {{ .Level }}')
+
+trigger
+    |eval(lambda: "emitted")
+        .as('value')
+        .keep('value', 'message', 'duration')
+    |eval(lambda: float("value"))
+        .as('value')
+        .keep()
+    |influxDBOut()
+        .create()
+        .database('chronograf')
+        .retentionPolicy('autogen')
+        .measurement('alerts')
+        .tag('alertName', '1x_Deadman_mega2')
+        .tag('triggerType', 'deadman')
+        .tag('node', 'bobby')
+

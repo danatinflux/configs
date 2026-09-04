@@ -1,0 +1,43 @@
+// Use a larger period here, as the telegraf data can be a little late
+// if the server is under load.
+var period = 1m
+
+// How often to query for the period.
+var every = 1m
+
+var data = batch
+    |query('''
+      SELECT last(usage_user) FROM "telegraf"."autogen"."cpu" where "cpu" = 'cpu-total' ''')
+        .period(period)
+        .every(every)
+        .groupBy(*)
+
+var trigger = data
+    |alert()
+    |deadman(0.9, 4m)
+        .id('Host: {{ index .Tags "host" }}, Cluster ID: {{ index .Tags "cluster_id" }}')
+        .message('MK2: {{ .Level }} Alert: Home Lab 1x Batch Deadman for {{ .ID }} at {{ .Time }}.')
+        .idTag('alertID')
+        .messageField('message')
+        .durationField('duration')
+        .levelTag('level')
+        .stateChangesOnly()
+        .discord()
+        .embedTitle('Deadman Event, Host is {{ .Level }}')
+
+trigger
+    |eval(lambda: "emitted")
+        .as('value')
+        .keep('value', 'message', 'duration')
+    |eval(lambda: float("value"))
+        .as('value')
+        .keep()
+    |influxDBOut()
+        .create()
+        .database('chronograf')
+        .retentionPolicy('autogen')
+        .measurement('alerts')
+        .tag('alertName', '1x_Deadman_mega2')
+        .tag('triggerType', 'deadman')
+        .tag('node', 'bobby')
+

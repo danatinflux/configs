@@ -1,0 +1,35 @@
+// Alerts when a container's cumulative restart_count increases within
+// a 5-minute bucket -- catches crash-loops (like the telegraf incidents
+// from earlier this week) automatically instead of finding them by hand.
+var period = 15m
+
+var every = 5m
+
+var data = batch
+    |query('''
+      SELECT non_negative_difference(max(restart_count)) AS restart_delta FROM "telegraf"."autogen"."docker_container_status"
+      ''')
+        .period(period)
+        .every(every)
+        .groupBy(time(5m), 'host', 'container_name')
+        .fill(0)
+
+data
+    |alert()
+        .id('Alert: Container Restarting, Host: {{ index .Tags "host" }}, Container: {{ index .Tags "container_name" }}')
+        .crit(lambda: "restart_delta" > 0)
+        .message('Condition:{{ .Level }} {{ .ID }} restarted {{ index .Fields "restart_delta" | printf "%0.0f" }} time(s) in the last 5 minutes')
+        .details('')
+        .discord()
+        .embedTitle('Container Restart Detected: {{ index .Tags "container_name" }} on {{ index .Tags "host" }}')
+
+data
+    |where(lambda: "restart_delta" > 0)
+    |influxDBOut()
+        .create()
+        .database('chronograf')
+        .measurement('alerts')
+        .tag('name', 'docker_restart_alert')
+        .tag('type', 'alert_threshold')
+        .tag('node', 'bobby')
+
