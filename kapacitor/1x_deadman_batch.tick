@@ -15,7 +15,7 @@ var data = batch
 var trigger = data
     |alert()
     |deadman(0.9, 4m)
-        .id('Host: {{ index .Tags "host" }}, Cluster ID: {{ index .Tags "cluster_id" }}')
+        .id('Host: {{ index .Tags "host" }}')
         .message('MK2: {{ .Level }} Alert: Home Lab 1x Batch Deadman for {{ .ID }} at {{ .Time }}.')
         .idTag('alertID')
         .messageField('message')
@@ -39,5 +39,4 @@ trigger
         .measurement('alerts')
         .tag('alertName', '1x_Deadman_mega2')
         .tag('triggerType', 'deadman')
-        .tag('node', 'bobby')
 

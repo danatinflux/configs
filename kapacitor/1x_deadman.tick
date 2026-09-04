@@ -3,11 +3,11 @@ var influxdb_metrics = stream
         .database('telegraf')
         .retentionPolicy('autogen')
         .measurement('cpu')
-    |groupBy('cluster_id', 'host')
+    |groupBy(*)
 
 var trigger = influxdb_metrics
     |deadman(0.9, 5m)
-        .id('Host: {{ index .Tags "host" }}, Cluster ID: {{ index .Tags "cluster_id" }}')
+        .id('Host: {{ index .Tags "host" }}')
         .message('{{ .Level }} Stream-2 Alert: HomeLab 1x Deadman for {{ .ID }} at {{ .Time }}.')
         .idTag('alertID')
         .messageField('message')
@@ -31,5 +31,4 @@ trigger
         .measurement('alerts')
         .tag('alertName', '1x_Deadman_mega2')
         .tag('triggerType', 'deadman')
-        .tag('node', 'bobby')
 

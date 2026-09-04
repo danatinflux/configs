@@ -35,5 +35,4 @@ data
         .measurement('alerts')
         .tag('name', 'swap_alert')
         .tag('type', 'alert_threshold')
-        .tag('node', 'bobby')
 

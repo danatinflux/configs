@@ -32,5 +32,4 @@ data
         .measurement('alerts')
         .tag('name', 'mem_alert')
         .tag('type', 'alert_threshold')
-        .tag('node', 'bobby')
 

@@ -36,5 +36,4 @@ data
         .measurement('alerts')
         .tag('name', 'disk_alert_mega2')
         .tag('type', 'alert_threshold')
-        .tag('node', 'bobby')
 
