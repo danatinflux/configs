@@ -13,7 +13,6 @@ var data = batch
         .groupBy(*)
 
 var trigger = data
-    |alert()
     |deadman(0.9, 4m)
         .id('Host: {{ index .Tags "host" }}')
         .message('MK2: {{ .Level }} Alert: Home Lab 1x Batch Deadman for {{ .ID }} at {{ .Time }}.')
